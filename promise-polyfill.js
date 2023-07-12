@@ -1,44 +1,51 @@
 function MyPromise(executor) {
   let onResolve,
     onReject,
-    isCalled = false,
+    value,
     isFullfilled = false,
     isRejected = false,
-    value;
-
-  this.then = function (cb) {
-    onResolve = cb;
-    if (isFullfilled && !isCalled) {
-      onResolve(value);
-      isCalled = true;
-    }
-    return this;
-  };
-  this.catch = function (cb) {
-    onReject = cb;
-    if (isRejected && !isCalled) {
-      onReject(value);
-      isCalled = true;
-    }
-    return this;
-  };
+    isCalled = false;
 
   function resolve(val) {
-    isFullfilled = true;
     value = val;
+    isFullfilled = true;
+
     if (typeof onResolve === "function" && !isCalled) {
       onResolve(val);
       isCalled = true;
     }
   }
   function reject(reason) {
-    isRejected = true;
     value = reason;
-    if (typeof onResolve === "function" && !isCalled) {
-      onReject(reason);
+    isRejected = true;
+
+    if (typeof onReject === "function" && !isCalled) {
+      onReject(val);
       isCalled = true;
     }
   }
+
+  this.then = function (cb) {
+    onResolve = cb;
+
+    if (isFullfilled && !isCalled) {
+      onResolve(value);
+      isCalled = true;
+    }
+
+    return this;
+  };
+
+  this.catch = function (cb) {
+    onReject = cb;
+
+    if (isRejected && !isCalled) {
+      onReject(value);
+      isCalled = true;
+    }
+
+    return this;
+  };
 
   try {
     executor(resolve, reject);
@@ -47,37 +54,52 @@ function MyPromise(executor) {
   }
 }
 
-MyPromise.resolve = function (val) {
+MyPromise.reject = function (reason) {
   return new MyPromise((resolve, reject) => {
-    resolve(val);
+    reject(reason);
   });
 };
 
-MyPromise.reject = function (val) {
+MyPromise.resolve = function (value) {
   return new MyPromise((resolve, reject) => {
-    reject(val);
+    resolve(value);
   });
 };
 
 MyPromise.all = function (promises) {
+  const result = [];
+  let completedPromises = 0;
   return new MyPromise((resolve, reject) => {
-    if (promises.length === 0) {
-      resolve(promises);
-      return;
-    }
-    let count = 0;
-    const result = [];
-
-    function done(val, i) {
-      result[i] = val;
-      count++;
-      if (count === promises.length) resolve(result);
-    }
-    
     for (let i = 0; i < promises.length; i++) {
-      promises[i]
-        .then((val) => done(val, i))
-        .catch((error) => reject(error));
+      const promise = promises[i];
+      promise
+        .then((value) => {
+          result[i] = value;
+          completedPromises++;
+          if (completedPromises === promise.length) resolve(result);
+        })
+        .catch(reject);
+    }
+  });
+};
+
+MyPromise.allSettled = function (promises) {
+  const result = [];
+  let completedPromises = 0;
+  return new MyPromise((resolve, reject) => {
+    for (let i = 0; i < promises.length; i++) {
+      const promise = promises[i];
+      promise
+        .then((value) => {
+          result[i] = { status: "fulfilled", value };
+        })
+        .catch((error) => {
+          result[i] = { status: "rejected", reason: error };
+        })
+        .finally(() => {
+          completedPromises++;
+          if (completedPromises === promise.length) resolve(result);
+        });
     }
   });
 };
@@ -85,7 +107,25 @@ MyPromise.all = function (promises) {
 MyPromise.race = function (promises) {
   return new MyPromise((resolve, reject) => {
     for (let i = 0; i < promises.length; i++) {
-      promises[i].then(resolve).catch(reject);
+      const promise = promises[i];
+      promise.then(resolve).catch(reject);
+    }
+  });
+};
+
+MyPromise.any = function (promises) {
+  const error = [];
+  let rejectedPromises = 0;
+  return new MyPromise((resolve, reject) => {
+    for (let i = 0; i < promises.length; i++) {
+      const promise = promises[i];
+      promise.then(resolve).catch((err) => {
+        error[i] = err;
+        rejectedPromises++;
+        if (rejectedPromises === promise.length) {
+          reject(new AggregateError(error, "All promises were rejected"));
+        }
+      });
     }
   });
 };
