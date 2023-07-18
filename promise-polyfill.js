@@ -76,7 +76,7 @@ MyPromise.all = function (promises) {
         .then((value) => {
           result[i] = value;
           completedPromises++;
-          if (completedPromises === promise.length) resolve(result);
+          if (completedPromises === promises.length) resolve(result);
         })
         .catch(reject);
     }
@@ -98,7 +98,7 @@ MyPromise.allSettled = function (promises) {
         })
         .finally(() => {
           completedPromises++;
-          if (completedPromises === promise.length) resolve(result);
+          if (completedPromises === promises.length) resolve(result);
         });
     }
   });
@@ -122,7 +122,7 @@ MyPromise.any = function (promises) {
       promise.then(resolve).catch((err) => {
         error[i] = err;
         rejectedPromises++;
-        if (rejectedPromises === promise.length) {
+        if (rejectedPromises === promises.length) {
           reject(new AggregateError(error, "All promises were rejected"));
         }
       });
