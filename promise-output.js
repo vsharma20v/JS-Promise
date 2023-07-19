@@ -137,3 +137,47 @@ secondPromise
   .then((data) => {
     console.log(data);
   });
+
+// example 9 - output = 1 7 2 4 6 5
+async function test() {
+  console.log(1);
+
+  const p = new Promise((res, rej) => {
+    setTimeout(() =>{
+      console.log(2);
+      res(3);
+      console.log(4);
+    },2000);
+  });
+
+  await p;
+
+  setTimeout(()=>{
+    console.log(5)
+  },3000)
+
+  console.log(6)
+}
+test();
+console.log(7);
+
+// example 10 - output = 1 6 7 2 4 5
+async function test() {
+  console.log(1);
+
+  const p = new Promise((res, rej) => {
+    setTimeout(() =>{
+      console.log(2);
+      res(3);
+      console.log(4);
+    },2000);
+  });
+
+  setTimeout(()=>{
+    console.log(5)
+  },3000)
+
+  console.log(6)
+}
+test();
+console.log(7);
