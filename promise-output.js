@@ -138,7 +138,7 @@ secondPromise
     console.log(data);
   });
 
-// example 9 - output = 1 7 2 4 6 5
+// example 9 - output = 1 7 2 4 3 6 5
 async function test() {
   console.log(1);
 
@@ -150,7 +150,8 @@ async function test() {
     },2000);
   });
 
-  await p;
+  const data = await p;
+  console.log(data);
 
   setTimeout(()=>{
     console.log(5)
